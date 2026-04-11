@@ -27,11 +27,11 @@ jobs:
 
       - name: Build PR environment
         run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          mkdir -p gh-pages/pr-$PR_NUMBER
-          cp source/src/index.html gh-pages/pr-$PR_NUMBER/index.html
-          sed -i "s/ENVIRONMENT_NAME/pr-$PR_NUMBER/" gh-pages/pr-$PR_NUMBER/index.html
-          sed -i "s/BRANCH_NAME/${{ github.head_ref }}/" gh-pages/pr-$PR_NUMBER/index.html
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            mkdir -p gh-pages/pr-$PR_NUMBER
+            cp source/src/index.html gh-pages/pr-$PR_NUMBER/index.html
+            sed -i "s|ENVIRONMENT_NAME|pr-$PR_NUMBER|" gh-pages/pr-$PR_NUMBER/index.html
+            sed -i "s|BRANCH_NAME|${{ github.head_ref }}|" gh-pages/pr-$PR_NUMBER/index.html
 
       - name: Push to gh-pages
         run: |
