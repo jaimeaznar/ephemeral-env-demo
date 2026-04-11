@@ -1,0 +1,37 @@
+# .github/workflows/deploy.yml
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Inject environment info
+        run: |
+          ENV_NAME=${{ github.ref_name == 'main' && 'production' || 'staging' }}
+          sed -i "s/ENVIRONMENT_NAME/$ENV_NAME/" src/index.html
+          sed -i "s/BRANCH_NAME/${{ github.ref_name }}/" src/index.html
+
+      - uses: actions/configure-pages@v4
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: src/
+
+      - uses: actions/deploy-pages@v4
+        id: deployment
