@@ -11,27 +11,30 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
 
-      - name: Inject environment info
+      - uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Build environment
         run: |
           ENV_NAME=${{ github.ref_name == 'main' && 'production' || 'staging' }}
-          sed -i "s/ENVIRONMENT_NAME/$ENV_NAME/" src/index.html
-          sed -i "s/BRANCH_NAME/${{ github.ref_name }}/" src/index.html
+          cp source/src/index.html gh-pages/index.html
+          sed -i "s|ENVIRONMENT_NAME|$ENV_NAME|" gh-pages/index.html
+          sed -i "s|BRANCH_NAME|${{ github.ref_name }}|" gh-pages/index.html
 
-      - uses: actions/configure-pages@v4
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: src/
-
-      - uses: actions/deploy-pages@v4
-        id: deployment
+      - name: Push to gh-pages
+        run: |
+          cd gh-pages
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "deploy ${{ github.ref_name }}"
+          git pushv
