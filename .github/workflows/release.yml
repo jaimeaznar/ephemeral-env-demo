@@ -56,5 +56,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add .
-          git commit -m "deploy ${{ github.ref_name }} to production"
+          git commit -m "deploy ${{ github.ref_name }} to production" || true
           git push
