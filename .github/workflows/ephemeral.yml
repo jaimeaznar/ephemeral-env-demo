@@ -1,0 +1,75 @@
+# .github/workflows/ephemeral.yml
+name: Ephemeral Environment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy-ephemeral:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Build PR environment
+        run: |
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            mkdir -p gh-pages/pr-$PR_NUMBER
+            cp source/src/index.html gh-pages/pr-$PR_NUMBER/index.html
+            sed -i "s|ENVIRONMENT_NAME|pr-$PR_NUMBER|" gh-pages/pr-$PR_NUMBER/index.html
+            sed -i "s|BRANCH_NAME|${{ github.head_ref }}|" gh-pages/pr-$PR_NUMBER/index.html
+
+      - name: Push to gh-pages
+        run: |
+          cd gh-pages
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "deploy pr-${{ github.event.pull_request.number }}"
+          git push
+
+      - name: Comment PR with URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+          
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 Ephemeral env ready: https://${{ github.repository_owner }}.github.io/ephemeral-env-demo/pr-${{ github.event.pull_request.number }}/'
+            })
+
+  destroy-ephemeral:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Destroy PR environment
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          rm -rf gh-pages/pr-$PR_NUMBER
+          cd gh-pages
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .
+          git commit -m "destroy pr-$PR_NUMBER"
+          git push
